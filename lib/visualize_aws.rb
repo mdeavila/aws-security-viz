@@ -1,20 +1,25 @@
-require 'right_aws'
+require 'aws-sdk'
 require 'graphviz'
 require_relative 'groups.rb'
 require 'set'
 
 class VisualizeAws
   def initialize(access_key, secret_key)
-    @ec2 = RightAws::Ec2.new(access_key, secret_key)
+    AWS.config(access_key_id: access_key, secret_access_key: secret_key)
+    @ec2 = AWS.ec2
   end
 
   def parse
-    groups = @ec2.describe_security_groups
+    groups = @ec2.security_groups.to_a
     g = GraphViz::new( "G" )
-    nodes = groups.collect {|group| group[:aws_group_name]}
+    nodes = groups.collect {|group| group.name}
     nodes.each {|n| g.add_node(n)}
-    GroupIngress.new(groups).each {|from, to, port_range| g.add_edge( from, to, :color => "blue", :style => "bold", :label => port_range )}
-    CidrIngress.new(groups, CidrGroupMapping.new).each {|from, to, port_range| g.add_edge( from, to, :color => "green", :style => "bold", :label => port_range )}
+    GroupIngress.new(groups).each { |from, to, port_range| 
+      g.add_edge( from, to, :color => "blue", :style => "bold", :label => port_range )
+    }
+    CidrIngress.new(groups, CidrGroupMapping.new).each { |from, to, port_range| 
+      g.add_edge( from, to, :color => "green", :style => "bold", :label => port_range )
+    }
     g
   end
 
@@ -30,8 +35,12 @@ class VisualizeAws
     end
     def each
       @groups.each do |group|
-        group[:aws_perms].each do |perm|
-          yield perm[:group_name], group[:aws_group_name], [perm[:from_port], perm[:to_port]].uniq.join("-")  if perm[:group_name]
+        ingress = group.ingress_ip_permissions.to_a
+        ingress.each do |ig|
+          ig.groups.each do |igrp|
+            igrp_name = igrp.name rescue igrp.id
+            yield igrp_name, group.name, ig.port_range.minmax.uniq.join(" - ")
+          end
         end
       end
     end
@@ -45,10 +54,11 @@ class VisualizeAws
 
     def each
       @groups.each do |group|
-        group[:aws_perms].each do |perm|
-          next if not perm[:cidr_ips] 
-          args = [perm[:cidr_ips], group[:aws_group_name], [perm[:from_port], perm[:to_port]].uniq.join("-")]
-          @filter.map(args) { |mapped_args| yield mapped_args}
+        ingress = group.ingress_ip_permissions.to_a
+        ingress.each do |ig|
+          ig.ip_ranges.each { |ip_range|
+             yield group.name, ip_range, ig.port_range.minmax.uniq.join(" - ")
+          }
         end
       end
     end

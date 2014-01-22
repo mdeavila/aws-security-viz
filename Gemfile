@@ -1,7 +1,7 @@
 source 'http://rubygems.org'
 
 gem 'ruby-graphviz'
-gem 'right_aws'
+gem 'aws-sdk', '~> 1.0'
 
 group :development do
   gem 'rspec'
