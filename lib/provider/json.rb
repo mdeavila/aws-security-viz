@@ -18,6 +18,21 @@ module Json
       @sg = sg
     end
 
+    def getTag(tagName)
+      if !@sg['Tags'].nil?
+        dict = @sg['Tags'].find { |t| t['Key'] == tagName }
+        dict.nil? ? nil : dict['Value']
+      end
+    end
+
+    def labels
+      labels = { "id" => group_id,
+                 "name" => name,
+                 "tag:Name" => getTag('Name'),
+                 "tag:eb-env-name" => getTag('elasticbeanstalk:environment-name')
+               }
+    end
+
     def name
       @sg['GroupName']
     end

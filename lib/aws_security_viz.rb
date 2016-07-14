@@ -11,8 +11,14 @@ require_relative 'aws_config'
 
 class VisualizeAws
   def initialize(config, options={})
+    # These are the command-line options
     @options = options
+
+    # This is the config file (who's filename may have been passed in via the command-line)
     @config = config
+
+#    log("config file notes: #{config.inspect}")
+    
     provider = options[:source_file].nil? ? Ec2Provider.new(options) : JsonProvider.new(options)
     @security_groups = SecurityGroups.new(provider, config)
   end
@@ -32,7 +38,18 @@ class VisualizeAws
     g = @config.obfuscate? ? DebugGraph.new(@config) : Graph.new(@config)
     @security_groups.each_with_index { |group, index|
       picker = ColorPicker.new(@options[:color])
-      g.add_node(group.name, group.labels)
+
+      # This is gross, but I'm not sure of a prettier way to do it. 
+      # I expect I'll just create an addNote() function to the group
+      notes = @config.notes(group.group_id)
+      log("notes for #{group.group_id}: #{notes}")
+      if notes
+        labels = group.labels.merge!({"notes"=> notes})
+      else
+        labels = group.labels
+      end  
+
+      g.add_node(group.name, labels)
       group.traffic.each { |traffic|
         if traffic.ingress
           g.add_edge(traffic.from, traffic.to, :color => picker.color(index, traffic.ingress), :label => traffic.port_range)
@@ -43,6 +60,10 @@ class VisualizeAws
     }
     g
   end
+
+  def log(msg)
+    puts msg if @config.debug?
+  end      
 
 end
 

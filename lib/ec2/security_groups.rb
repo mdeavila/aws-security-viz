@@ -29,20 +29,15 @@ end
 class SecurityGroup
   extend Forwardable
 
-  # @group is an Ec2::SecurityGroup
+  def_delegators :@group, :name, :labels, :group_id
 
-  def_delegator :@group, :name
-
+  # @group is an Ec2::SecurityGroup IFF the provider is ec2.
+  # @group is an Json::SecurityGroup IFF the provider is json  
   def initialize(all_groups, group, config)
     @all_groups = all_groups
     @group = group
     @config = config
   end
-
-  def labels
-    fsg = @group.instance_variable_get(:@sg)
-    labels = { "id" => fsg.group_id, "name" => fsg.name, "tag:Name" => fsg.tags['Name'], "tag:eb-env-name" => fsg.tags['elasticbeanstalk:environment-name'] }
-   end
 
   def permissions
     ingress_permissions = @group.ip_permissions.collect { |ip|

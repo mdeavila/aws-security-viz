@@ -41,6 +41,10 @@ module Ec2
       @sg = sg
     end
 
+    def labels
+      labels = { "id" => @sg.group_id, "name" => @sg.name, "tag:Name" => @sg.tags['Name'], "tag:eb-env-name" => @sg.tags['elasticbeanstalk:environment-name'] }
+    end
+
     def ip_permissions
       @sg.ip_permissions.collect { |ip|
         Ec2::IpPermission.new(ip)

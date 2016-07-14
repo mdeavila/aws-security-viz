@@ -8,7 +8,7 @@ class Graph
   end
 
   def add_node(name, labels={})
-    log("node: #{name} labels: #{labels}")
+    log("addding node name #{name} with labels #{labels}")
     uniquely_add(@ops, :node, name, labels) {
       [:node, name, labels]
     }
@@ -25,6 +25,7 @@ class Graph
 
   def output(renderer)
     @ops.each { |op, *args|
+    log("rendering #{op} with #{args}")
       renderer.add_node(*args) if op==:node
       renderer.add_edge(*args) if op==:edge
     }
@@ -34,6 +35,7 @@ class Graph
   def uniquely_add(target, type, *opts, &block)
     return if opts.compact.empty?
     return if @nodes.include?([type, opts])
+    log("uniquely adding #{type} with #{opts}")
     @nodes.add([type, opts])
     target << yield
   end

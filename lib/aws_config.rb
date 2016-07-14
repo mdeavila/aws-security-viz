@@ -27,6 +27,11 @@ class AwsConfig
     @opts[:obfuscate] || false
   end
 
+  def notes(sgId)
+    log("looking for notes for #{sgId}")
+    @opts.key?("notes") ? @opts["notes"][sgId] : nil
+  end
+
   def self.load(file)
     config_opts = File.exist?(file) ? YAML.load_file(file) : {}
     AwsConfig.new(config_opts)
@@ -39,4 +44,8 @@ class AwsConfig
   def self.write(file)
     FileUtils.cp(File.expand_path('../opts.yml.sample', __FILE__), file)
   end
+
+  def log(msg)
+    puts msg if debug?
+  end        
 end

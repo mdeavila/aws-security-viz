@@ -14,18 +14,26 @@ module Renderer
     end
 
     def add_node(name, labels={})
-      log("renderer considering node #{name} with labels: #{labels}")
+#      puts "adding to renderer name #{name} with labels #{labels}"
       node = @g.add_node(name)
-      
-      if !labels.empty?
-        rows = ""
+
+      rows = ""
+      if !labels.nil? && !labels.empty?
         labels.each_pair { |key, value| rows+="<tr><td>#{key}</td><td>#{value}</td></tr>" }
-        label="<<table>#{rows}</table>>"
-        
+      end
+
+#      notes = @config.notes(name)
+#      if !notes.nil? && !notes.empty?
+#        rows += "<tr><td colspan=\"2\">#{notes}</td></tr>"
+#      end
+
+      if !rows.empty?
+        label = "<<table>#{rows}</table>>"
+          
         node.set { |_n|
           _n.label = label
         }
-        end
+      end
     end
 
     def add_edge(from, to, opts)
